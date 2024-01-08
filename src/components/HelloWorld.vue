@@ -14,10 +14,10 @@
             <p>Search for an actor using their name, their movies, their birthplace, anything really...</p>
             <br>
             <div id="searchContainer">
-            <form v-on:submit.prevent="onSubmit">
-                <input type="text" placeholder="Search..." name="search">
-                <button type="submit">Submit</button>
-            </form>
+                <form v-on:submit.prevent="onSubmit">
+                    <input type="text" placeholder="Search..." name="search">
+                    <button type="submit">Submit</button>
+                </form>
             </div>
         </div>
         <div id="results"></div>
@@ -35,21 +35,28 @@ export default {
     methods: {
 
         async onSubmit(evt) {
+            var localHost = 8080;
+
             var myHeaders = new Headers();
             myHeaders.append("Accept", "application/json");
             myHeaders.append("Content-Type", "application/x-www-form-urlencoded");
+
             var requestOptions = {
                 method: 'GET',
                 headers: myHeaders,
-                redirect: 'follow'
+                redirect: 'follow',
+                originWhitelist: [], // Allow all origins
+                requireHeader: ['origin', 'x-requested-with'],
+                removeHeaders: ['cookie', 'cookie2']
             };
 
             var searchValue = evt.target.elements.search.value;
             // how many words are being searched
             var nmb = searchValue.split(" ").length;
             // If we have a multiple word query, we bake in the %20 symbol as separator
-            var query = nmb < 2 ? `http://localhost:8983/solr/actors/query?q=${searchValue}` : `http://localhost:8983/solr/actors/query?q=${searchValue.replace(/\s/g, "%20")}`;
-        
+            var prefix = 'http://localhost:' + localHost + '/';
+            var query = nmb < 2 ? prefix + `solr/actors/query?q=${searchValue}` : prefix + `solr/actors/query?q=${searchValue.replace(/\s/g, "%20")}`;
+            console.log(query);
             var datas;
 
             // Fetch datas using the query
@@ -76,21 +83,18 @@ export default {
                 if (names.includes(datas[element].name)) continue;
                 // Each result is an object with different fields like 
                 // name, biography, birhtdate, birthplace,...
-                for (const item in datas[element]) 
-                {
+                for (const item in datas[element]) {
                     // Skip these fields
                     if (item == "link" || item == "_text_" || item == "id" || item == "_root_" || item == "_version_") continue;
 
                     // if acting, writing, or directing
                     // iterate through corresponding array
-                    if (item.includes("acting")||item.includes("writing")||item.includes("directing"))
-                    {
+                    if (item.includes("acting") || item.includes("writing") || item.includes("directing")) {
                         var movies = datas[element][item];
-                        for (let i=0; i<movies.length; i++)
-                        {
+                        for (let i = 0; i < movies.length; i++) {
                             // console.log("this could be the error: ", movies[i]);
                             var arr = String(movies[i]).split(" "); // current movie being checked
-                        
+
                             arr.forEach(function (value, index, array) {
                                 for (var i = 0; i < this.length; i++) {
                                     // This checks if the searched words appear
@@ -102,7 +106,7 @@ export default {
                                         names.push(datas[element].name); // insert this element into array
                                         // Prints words before and after matched results
                                         // If there are no words before, starts from matched result
-                                        var crtIndex = index-4 >= 0 ? index-4 : index;
+                                        var crtIndex = index - 4 >= 0 ? index - 4 : index;
                                         var relevantWords = "";
                                         // There are not enough words, so we print the field instead
                                         if (arr.length < 4) {
@@ -110,15 +114,14 @@ export default {
                                             // Capitalize first letter of field
                                             const capField = field.charAt(0).toUpperCase() + field.slice(1);
                                             relevantWords += `${capField}: `;
-                                            for (let g=0;g<array.length;g++) {
+                                            for (let g = 0; g < array.length; g++) {
                                                 // Matching word, we make it bold
                                                 if (crtIndex == index) relevantWords += `<b>${array[crtIndex++]}</b> `;
                                                 else if (array[crtIndex]) relevantWords += `${array[crtIndex++]} `;
                                             }
                                         }
-                                        else 
-                                        {
-                                            for (let g=0;g<8;g++) {
+                                        else {
+                                            for (let g = 0; g < 8; g++) {
                                                 // Matching word, we make it bold
                                                 if (crtIndex == index) relevantWords += `<b>${array[crtIndex++]}</b> `;
                                                 // We check if there's a word
@@ -134,11 +137,11 @@ export default {
                             }, that);
                         }
                         continue;   // skip to the next since we already know it s either
-                                    // acting, directing or writing
+                        // acting, directing or writing
                     }
 
                     arr = datas[element][item].split(" ");
-                    
+
                     // otherwise, scan the corresponding string
                     arr.forEach(function (value, index, array) {
                         for (var i = 0; i < this.length; i++) {
@@ -151,7 +154,7 @@ export default {
                                 names.push(datas[element].name); // insert this element into array
                                 // Prints words before and after matched results
                                 // If there are no words before, starts from matched result
-                                var crtIndex = index-4 >= 0 ? index-4 : index;
+                                var crtIndex = index - 4 >= 0 ? index - 4 : index;
                                 var relevantWords = "";
                                 // There are not enough words, so we print the field instead
                                 if (arr.length < 4) {
@@ -159,17 +162,17 @@ export default {
                                     // Capitalize first letter of field
                                     const capField = field.charAt(0).toUpperCase() + field.slice(1);
                                     relevantWords += `${capField}: `;
-                                    for (let g=0;g<array.length;g++) {
+                                    for (let g = 0; g < array.length; g++) {
                                         if (crtIndex == index) relevantWords += `<b>${array[crtIndex++]}</b> `;
                                         else if (array[crtIndex]) relevantWords += `${array[crtIndex++]} `;
                                     }
                                 } else {
-                                    for (let g=0;g<8;g++) {
+                                    for (let g = 0; g < 8; g++) {
                                         if (crtIndex == index) relevantWords += `<b>${array[crtIndex++]}</b> `;
                                         else if (array[crtIndex]) relevantWords += `${array[crtIndex++]} `;
                                     }
                                 }
-                                 // Add words to the snippet
+                                // Add words to the snippet
                                 snippet += `<li><p><i>${datas[element].link}</i></p><br>
                                             <a href=${datas[element].link} target="_blank"><h5><p>${datas[element].name}</p></h5></a><br> 
                                             <p>${relevantWords}</p></li>`;
@@ -189,9 +192,8 @@ export default {
             div.innerHTML = snippet.trim();
         }
     }
-    }
-    </script>
+}
+</script>
 
     <!-- Add "scoped" attribute to limit CSS to this component only -->
-    <style scoped>
-    </style>
+<style scoped></style>

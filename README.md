@@ -20,4 +20,4 @@ npm run serve
 
 If you see this error: Error message "error:0308010C:digital envelope routines::unsupported" 
 I solved it thanks to stackoverflow:
-https://stackoverflow.com/questions/69692842/error-message-error0308010cdigital-envelope-routinesunsupported)
+https://stackoverflow.com/questions/69692842/error-message-error0308010cdigital-envelexport NODE_OPTIONS=--openssl-legacy-providerope-routinesunsupported)
